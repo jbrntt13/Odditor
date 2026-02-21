@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(curl:*)",
+      "Bash(node -e:*)",
+      "Bash(npm start)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd /c \"taskkill /PID 27884 /F\")",
+      "Bash(cmd /c \"taskkill /PID 27736 /F\")",
+      "Bash(cmd /c \"taskkill /PID 27884 /F & taskkill /PID 27736 /F\")"
+    ]
+  }
+}
