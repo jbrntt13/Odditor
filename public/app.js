@@ -478,6 +478,63 @@ function patchMobile(id, count, comments, type) {
   `;
 }
 
+// ── Word cloud ─────────────────────────────────────────────────────────────
+const STOP_WORDS = new Set([
+  'the','a','an','is','are','was','were','be','been','being','have','has','had',
+  'do','does','did','will','would','could','should','may','might','can','to','of',
+  'in','on','at','by','for','with','about','as','from','or','and','but','not',
+  'this','that','it','its','they','them','their','he','she','his','her','we','our',
+  'you','your','i','me','my','so','just','very','really','like','than','more',
+  'also','too','even','if','when','how','what','who','which','there','here',
+  'im','dont','hes','shes','thats','theyre','ive','its','still','always','never',
+]);
+
+function buildWordCloud() {
+  const freq = {};
+
+  S.votes.forEach(vd => {
+    [...vd.comments.normal, ...vd.comments.odd].forEach(c => {
+      c.text.toLowerCase()
+        .replace(/[^a-z\s]/g, ' ')
+        .split(/\s+/)
+        .filter(w => w.length > 2 && !STOP_WORDS.has(w))
+        .forEach(w => { freq[w] = (freq[w] || 0) + 1; });
+    });
+  });
+
+  const entries = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 50);
+  if (!entries.length) return null;
+
+  // Shuffle so it doesn't read like a sorted list
+  for (let i = entries.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [entries[i], entries[j]] = [entries[j], entries[i]];
+  }
+
+  const max = Math.max(...entries.map(e => e[1]));
+  const colors = ['var(--white)', 'var(--yellow)', 'var(--normal)', 'var(--odd)', 'var(--muted)', 'var(--normal)', 'var(--yellow)'];
+
+  const section = document.createElement('div');
+  section.className = 'word-cloud-section';
+  section.innerHTML = `<div class="word-cloud-title">How People Described ${esc(S.poll.name)}</div>`;
+
+  const cloud = document.createElement('div');
+  cloud.className = 'word-cloud';
+
+  entries.forEach(([word, count], i) => {
+    const span = document.createElement('span');
+    span.className = 'cloud-word';
+    span.textContent = word;
+    span.style.fontSize = `${0.85 + (count / max) * 3}rem`;
+    span.style.color = colors[i % colors.length];
+    span.style.opacity = String(0.45 + (count / max) * 0.55);
+    cloud.appendChild(span);
+  });
+
+  section.appendChild(cloud);
+  return section;
+}
+
 // ── RESULTS ────────────────────────────────────────────────────────────────
 function buildResults() {
   if (!S.poll || !S.poll.questions) return buildErrorView('No poll loaded.');
@@ -514,6 +571,13 @@ function buildResults() {
   `;
 
   div.querySelector('#btnHome').onclick = () => render('home');
+
+  const cloud = buildWordCloud();
+  if (cloud) {
+    const grid = div.querySelector('.results-grid');
+    div.insertBefore(cloud, grid);
+  }
+
   return div;
 }
 

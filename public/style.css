@@ -754,6 +754,47 @@ textarea { resize: none; }
   margin-top: 36px;
 }
 
+/* ── Word Cloud ────────────────────────────────────────────────────────── */
+.word-cloud-section {
+  width: 100%;
+  max-width: 700px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 28px 24px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.word-cloud-title {
+  font-family: 'Bangers', cursive;
+  font-size: 1.4rem;
+  letter-spacing: 2px;
+  color: var(--yellow);
+  margin-bottom: 20px;
+}
+
+.word-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  justify-content: center;
+  align-items: center;
+  line-height: 1.2;
+}
+
+.cloud-word {
+  font-family: 'Bangers', cursive;
+  letter-spacing: 1.5px;
+  cursor: default;
+  transition: transform 0.15s, opacity 0.15s;
+}
+
+.cloud-word:hover {
+  transform: scale(1.2);
+  opacity: 1 !important;
+}
+
 /* ── Error / loading states ────────────────────────────────────────────── */
 .error-view {
   display: flex;
