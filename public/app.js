@@ -130,7 +130,8 @@ async function doCreatePoll(name) {
     S.pollId   = data.id;
     S.poll     = { name: data.name, questions: [] };
     render('created');
-  } catch {
+  } catch (err) {
+    console.error('doCreatePoll error:', err);
     alert('Something went wrong — please try again.');
   }
 }
@@ -245,7 +246,8 @@ async function doLoadPoll(pollId, isHost) {
 
     if (isHost) render('results');
     else        render('voting');
-  } catch {
+  } catch (err) {
+    console.error('doLoadPoll error:', err);
     alert('Something went wrong — please try again.');
   }
 }
@@ -269,7 +271,7 @@ function buildVoting() {
       <div class="voting-progress-label">${answered} answered</div>
     </div>
     <div class="progress-bar-wrap">
-      <div class="progress-bar" style="width:${pct}%"></div>
+      <div class="progress-bar" style="width:${Math.round((answered / S.poll.questions.length) * 100)}%"></div>
     </div>
 
     <!-- Main 3-column body -->
