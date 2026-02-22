@@ -12,6 +12,8 @@ const S = {
   selectedVote: null,   // 'normal' | 'odd'
   myVotes: [],          // { choice, comment }[]
   votes: [],            // live { votes, comments } per question index
+  compareA: null,       // { poll, votes } for comparison
+  compareB: null,
 };
 
 const app = document.getElementById('app');
@@ -49,12 +51,14 @@ function render(view) {
   app.appendChild(buildHeader());
 
   const views = {
-    home:    buildHome,
-    create:  buildCreate,
-    created: buildCreated,
-    join:    buildJoin,
-    voting:  buildVoting,
-    results: buildResults,
+    home:           buildHome,
+    create:         buildCreate,
+    created:        buildCreated,
+    join:           buildJoin,
+    voting:         buildVoting,
+    results:        buildResults,
+    compare:        buildCompare,
+    compareResults: buildCompareResults,
   };
 
   const builder = views[view];
@@ -81,10 +85,12 @@ function buildHome() {
     <div class="home-actions">
       <button class="btn btn-primary" id="btnCreate">&#127917; Make My Poll</button>
       <button class="btn btn-ghost"   id="btnJoin">&#128505; Vote on a Friend</button>
+      <button class="btn btn-ghost"   id="btnCompare">&#9878; Compare Two People</button>
     </div>
   `;
-  div.querySelector('#btnCreate').onclick = () => render('create');
-  div.querySelector('#btnJoin').onclick   = () => render('join');
+  div.querySelector('#btnCreate').onclick  = () => render('create');
+  div.querySelector('#btnJoin').onclick    = () => render('join');
+  div.querySelector('#btnCompare').onclick = () => render('compare');
   return div;
 }
 
@@ -299,7 +305,7 @@ function buildVoting() {
         </div>
 
         <!-- Comment box appears after a choice is made -->
-        <div class="comment-box hidden" id="commentBox">
+        <div class="comment-box" id="commentBox" style="visibility:hidden">
           <textarea id="commentInput" rows="3"
             placeholder="Add a comment explaining your take… (optional)"></textarea>
         </div>
@@ -346,7 +352,7 @@ function buildVoting() {
   if (S.selectedVote) {
     applyVoteUI(S.selectedVote);
     div.querySelector('#btnSubmit').disabled = false;
-    div.querySelector('#commentBox').classList.remove('hidden');
+    div.querySelector('#commentBox').style.visibility = 'visible';
   }
 
   return div;
@@ -373,7 +379,7 @@ function selectVote(choice) {
   if (btn) btn.disabled = false;
 
   const box = document.getElementById('commentBox');
-  if (box) box.classList.remove('hidden');
+  if (box) box.style.visibility = 'visible';
 }
 
 function applyVoteUI(choice) {
@@ -475,6 +481,170 @@ function patchMobile(id, count, comments, type) {
   col.innerHTML = `
     <div class="mobile-col-title" style="color:${color}">${icon} ${label} (${count})</div>
     ${comments.length ? renderCommentList(comments, type, false) : '<div class="panel-empty">No takes yet…</div>'}
+  `;
+}
+
+// ── COMPARE ────────────────────────────────────────────────────────────────
+function buildCompare() {
+  const div = document.createElement('div');
+  div.className = 'form-view anim-slide';
+  div.innerHTML = `
+    <div class="card form-card">
+      <h2>Compare Two People</h2>
+      <p class="sub">Enter two poll codes to see where people agree — and where they really don't.</p>
+      <div class="form-group">
+        <label>First Person's Poll Code</label>
+        <input type="text" id="inpCodeA" placeholder="ABC123" maxlength="6" autocomplete="off"
+          style="text-transform:uppercase;font-family:'Bangers',cursive;font-size:1.8rem;letter-spacing:6px;text-align:center;">
+      </div>
+      <div class="form-group">
+        <label>Second Person's Poll Code</label>
+        <input type="text" id="inpCodeB" placeholder="DEF456" maxlength="6" autocomplete="off"
+          style="text-transform:uppercase;font-family:'Bangers',cursive;font-size:1.8rem;letter-spacing:6px;text-align:center;">
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-ghost"   id="btnBack">&#8592; Back</button>
+        <button class="btn btn-primary" id="btnGo">Compare &#8594;</button>
+      </div>
+    </div>
+  `;
+
+  const inpA = div.querySelector('#inpCodeA');
+  const inpB = div.querySelector('#inpCodeB');
+  [inpA, inpB].forEach(inp => {
+    inp.addEventListener('input', e => { e.target.value = e.target.value.toUpperCase(); });
+  });
+
+  div.querySelector('#btnBack').onclick = () => render('home');
+  div.querySelector('#btnGo').onclick = () => {
+    const codeA = inpA.value.trim().toUpperCase();
+    const codeB = inpB.value.trim().toUpperCase();
+    if (!codeA) { inpA.focus(); return; }
+    if (!codeB) { inpB.focus(); return; }
+    if (codeA === codeB) { alert('Those are the same poll!'); return; }
+    doCompare(codeA, codeB);
+  };
+
+  setTimeout(() => inpA.focus(), 50);
+  return div;
+}
+
+async function doCompare(codeA, codeB) {
+  try {
+    const [resA, resB] = await Promise.all([
+      fetch(`/api/poll/${codeA}`),
+      fetch(`/api/poll/${codeB}`),
+    ]);
+    if (!resA.ok) { alert(`Poll "${codeA}" not found.`); return; }
+    if (!resB.ok) { alert(`Poll "${codeB}" not found.`); return; }
+
+    const [pollA, pollB] = await Promise.all([resA.json(), resB.json()]);
+
+    S.compareA = { poll: pollA, votes: pollA.questions.map(q => ({
+      votes: { ...q.votes }, comments: { normal: [...q.comments.normal], odd: [...q.comments.odd] }
+    }))};
+    S.compareB = { poll: pollB, votes: pollB.questions.map(q => ({
+      votes: { ...q.votes }, comments: { normal: [...q.comments.normal], odd: [...q.comments.odd] }
+    }))};
+
+    render('compareResults');
+  } catch (err) {
+    console.error('doCompare error:', err);
+    alert('Something went wrong — please try again.');
+  }
+}
+
+function buildCompareResults() {
+  const { poll: pollA, votes: votesA } = S.compareA;
+  const { poll: pollB, votes: votesB } = S.compareB;
+
+  // Match shared questions that have votes in both polls
+  const comparisons = [];
+  pollA.questions.forEach((qA, iA) => {
+    const iB = pollB.questions.findIndex(qB => qB.text === qA.text);
+    if (iB === -1) return;
+    const vdA = votesA[iA], vdB = votesB[iB];
+    const totalA = vdA.votes.normal + vdA.votes.odd;
+    const totalB = vdB.votes.normal + vdB.votes.odd;
+    if (totalA === 0 || totalB === 0) return;
+    const oddPctA = Math.round((vdA.votes.odd / totalA) * 100);
+    const oddPctB = Math.round((vdB.votes.odd / totalB) * 100);
+    comparisons.push({ text: qA.text, oddPctA, oddPctB, diff: Math.abs(oddPctA - oddPctB) });
+  });
+
+  const byDiff    = [...comparisons].sort((a, b) => a.diff - b.diff);
+  const mostAlike = byDiff.slice(0, 3);
+  const mostDiff  = [...byDiff].reverse().slice(0, 3);
+  const similarity = comparisons.length > 0
+    ? Math.round(100 - comparisons.reduce((s, c) => s + c.diff, 0) / comparisons.length)
+    : null;
+
+  const div = document.createElement('div');
+  div.className = 'results-view anim-fade';
+  div.innerHTML = `
+    <div class="compare-hero">
+      <div class="compare-names">
+        <span class="compare-name-a">${esc(pollA.name)}</span>
+        <span class="compare-vs">VS</span>
+        <span class="compare-name-b">${esc(pollB.name)}</span>
+      </div>
+      ${similarity !== null
+        ? `<div class="compare-similarity">
+            <div class="similarity-score">${similarity}%</div>
+            <div class="similarity-label">similar in weirdness</div>
+           </div>`
+        : `<p style="color:var(--muted);margin-top:16px">Not enough votes to compare yet.</p>`
+      }
+    </div>
+
+    ${comparisons.length === 0
+      ? `<div class="card" style="max-width:500px;text-align:center;padding:32px">
+           <p style="color:var(--muted)">Neither poll has enough votes on shared questions yet. Get more people to vote!</p>
+         </div>`
+      : `<div class="compare-grid">
+           <div class="compare-section">
+             <div class="compare-section-title alike">&#10003; Most Alike</div>
+             ${mostAlike.map(c => buildCompareCard(c, pollA.name, pollB.name)).join('')}
+           </div>
+           <div class="compare-section">
+             <div class="compare-section-title different">&#9889; Most Different</div>
+             ${mostDiff.map(c => buildCompareCard(c, pollA.name, pollB.name)).join('')}
+           </div>
+         </div>`
+    }
+
+    <div class="results-back" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+      <button class="btn btn-ghost" id="btnAgain">&#8592; Compare Again</button>
+      <button class="btn btn-ghost" id="btnHome">&#8962; Home</button>
+    </div>
+  `;
+
+  div.querySelector('#btnAgain').onclick = () => render('compare');
+  div.querySelector('#btnHome').onclick  = () => render('home');
+  return div;
+}
+
+function buildCompareCard(c, nameA, nameB) {
+  const diffLabel = c.diff === 0 ? 'Exactly the same!' : `${c.diff}% apart`;
+  return `
+    <div class="compare-card">
+      <div class="compare-card-topic">${esc(c.text)}</div>
+      <div class="compare-bar-row">
+        <div class="compare-bar-label label-a">${esc(nameA)}</div>
+        <div class="compare-bar-track">
+          <div class="compare-bar-fill fill-a" style="width:${c.oddPctA}%"></div>
+        </div>
+        <div class="compare-bar-pct">${c.oddPctA}%</div>
+      </div>
+      <div class="compare-bar-row">
+        <div class="compare-bar-label label-b">${esc(nameB)}</div>
+        <div class="compare-bar-track">
+          <div class="compare-bar-fill fill-b" style="width:${c.oddPctB}%"></div>
+        </div>
+        <div class="compare-bar-pct">${c.oddPctB}%</div>
+      </div>
+      <div class="compare-diff-label">${diffLabel}</div>
+    </div>
   `;
 }
 

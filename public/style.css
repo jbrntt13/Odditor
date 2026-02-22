@@ -754,6 +754,151 @@ textarea { resize: none; }
   margin-top: 36px;
 }
 
+/* ── Compare ───────────────────────────────────────────────────────────── */
+.compare-hero {
+  text-align: center;
+  margin-bottom: 40px;
+  animation: bounceIn 0.5s ease;
+}
+
+.compare-names {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.compare-name-a {
+  font-family: 'Bangers', cursive;
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  letter-spacing: 2px;
+  color: var(--normal);
+}
+
+.compare-name-b {
+  font-family: 'Bangers', cursive;
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  letter-spacing: 2px;
+  color: var(--odd);
+}
+
+.compare-vs {
+  font-family: 'Bangers', cursive;
+  font-size: 1.1rem;
+  letter-spacing: 4px;
+  color: var(--muted);
+}
+
+.compare-similarity {
+  margin-top: 16px;
+}
+
+.similarity-score {
+  font-family: 'Bangers', cursive;
+  font-size: clamp(4rem, 14vw, 7rem);
+  line-height: 1;
+  background: linear-gradient(135deg, var(--normal), var(--yellow));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.similarity-label {
+  color: var(--muted);
+  font-size: 1rem;
+  margin-top: 4px;
+}
+
+.compare-grid {
+  width: 100%;
+  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.compare-section-title {
+  font-family: 'Bangers', cursive;
+  font-size: 1.5rem;
+  letter-spacing: 3px;
+  margin-bottom: 12px;
+}
+.compare-section-title.alike     { color: var(--normal); }
+.compare-section-title.different { color: var(--odd); }
+
+.compare-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 10px;
+}
+
+.compare-card-topic {
+  font-family: 'Bangers', cursive;
+  font-size: 1.3rem;
+  letter-spacing: 2px;
+  color: var(--yellow);
+  margin-bottom: 12px;
+}
+
+.compare-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.compare-bar-label {
+  width: 68px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.label-a { color: var(--normal); }
+.label-b { color: var(--odd); }
+
+.compare-bar-track {
+  flex: 1;
+  height: 20px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.compare-bar-fill {
+  height: 100%;
+  border-radius: 5px;
+  min-width: 4px;
+  transition: width 0.7s ease;
+}
+.fill-a { background: var(--normal); }
+.fill-b { background: var(--odd); }
+
+.compare-bar-pct {
+  width: 34px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.compare-diff-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-align: right;
+  margin-top: 4px;
+  font-style: italic;
+}
+
 /* ── Word Cloud ────────────────────────────────────────────────────────── */
 .word-cloud-section {
   width: 100%;
